@@ -1,0 +1,17 @@
+{
+    "default": {
+        "app": {
+            "logLevel": "trace"
+        }
+    },
+    "development": {
+        "app": {
+            "logLevel": "debug"
+        }
+    },
+    "production": {
+        "app": {
+            "logLevel": "trace"
+        }
+    }
+}
