@@ -1,0 +1,62 @@
+## Onaje Baxley
+## 6/26/18
+##
+## The follwing ClusterRole resource represents the cluster-wide ability to
+## scale (that is, update) K8s deployments, statefulsets, replicasets, and
+## replication controllers.
+## TODO: This role does not currently work for accessing resources in a
+## non-default namespace
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: scale-all
+rules:
+- apiGroups: ["", "*", "apps", "extensions", "rbac.authorization.k8s.io"]
+  resources: [
+      "events",
+      "pods",
+      "namespaces",
+      "replicationcontrollers",
+      "replicationcontrollers.*",
+      "replicationcontrollers/scale",
+      "replicationcontrollers/status",
+      "replicationcontrollers.extensions/scale",
+      "deployments",
+      "deployments.*",
+      "deployments.apps",
+      "deployments.apps/scale",
+      "deployments.extensions",
+      "deployments.extensions/scale",
+      "statefulsets",
+      "statefulsets.*",
+      "statefulsets.apps",
+      "statefulsets.apps/scale",
+      "replicasets",
+      "replicasets.*",
+      "replicasets.apps",
+      "replicasets.apps/scale",
+      "replicasets.extensions/scale"
+  ]
+  verbs: ["create", "update", "patch", "get", "watch", "list"]
+---
+
+## The following CluserRoleBinding resource allows for automatic binding
+## of the "deploy-mgmt" default service account (the default User under which
+## pods from the "deploy-mgmt" namespace assume) with the scale-all role
+## defined above. 
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: deployments-scaler
+subjects:
+  - kind: User
+    name: system:serviceaccount:deploy-mgmt:default
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  # name: scale-all # Won't work due to namespace restrictions
+  apiGroup: rbac.authorization.k8s.io
+
