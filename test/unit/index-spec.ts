@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import 'mocha';
 
-import { Person } from '../../src/index';
+import * as index from '../../src/index';
 
 describe('[index]', () => {
     it('should expose the expected modules, functions and properties', () => {
-        expect(Person).to.be.a('function');
+        expect(index.DeploymentManager).to.be.an('object');
     });
 });
