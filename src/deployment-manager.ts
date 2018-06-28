@@ -31,7 +31,7 @@ class DeploymentManager {
 
     /**
      * Initializes this DeploymentManager to load accurate K8s client
-     * specifications, and verify the license validator.
+     * specifications, and verify the given license validator is working.
      *
      * @returns Promise<boolean> Indicating success of the validator
      */
@@ -45,9 +45,10 @@ class DeploymentManager {
 
             return isValid;
         } catch (err) {
-            this._logger.error(`ERROR loading spec: ${err.message}`);
+            const msg = `ERROR in DeploymentManager initialization: ${err.message}`;
+            this._logger.error(msg);
 
-            return false;
+            throw Error(msg);
         }
     }
 
@@ -85,42 +86,90 @@ class DeploymentManager {
         }
 
         try {
-            // const pods = await this._k8s_client.api.v1.namespaces('cassandra').pods.get();
-            // this._logger.debug(`Pods: ${JSON.stringify(pods)}`);
-            // const cassandra = await this._k8s_client.apis.apps.v1beta1.namespaces('cassandra')
-            //     .statefulsets('cassandra').scale.get();
-            // const redisStatefulSet = await this._k8s_client.apis.apps.v1beta2.namespaces('redis')
-            //     .statefulsets('redis-master').scale.get();
-            // const redisDeployment = await this._k8s_client.apis.apps.v1beta1.namespaces('redis')
-            //     .deployments('redis-slave').scale.get();
-            // const rabbitMqStatefulSet = await this._k8s_client.apis.apps.v1beta2.namespaces('rmq')
-            //     .statefulsets('rmq-rabbitmq').scale.get();
+            while (true) {
+                // this._logger.trace('Waiting...');
+                await this._halt(sampleRate);
 
-            // this._logger.debug(`Cassandra scale: ${JSON.stringify(cassandra)}`);
-            // this._logger.debug(`Redis master scale: ${JSON.stringify(redisStatefulSet)}`);
-            // this._logger.debug(`Redis slave scale: ${JSON.stringify(redisDeployment)}`);
-            // this._logger.debug(`RabbitMq scale: ${JSON.stringify(rabbitMqStatefulSet)}`);
-            this._logger.trace(`Scaling up services`);
+                this._logger.trace('Checking license validity...');
+                const isValid = await this.executeValidator();
 
-            await this._scaleDeployment('cassandra', 'cassandra', 'statefulset', 3);
-            this._logger.trace('Cassandra up..');
+                if (!isValid) {
+                    this._logger.debug('Invalid license detected. Restricting access to K8s services');
+                    // TODO: pick one: ingress manip or scaling down services
 
-            await this._scaleDeployment('rmq-rabbitmq', 'rmq', 'statefulset', 3);
-            this._logger.trace('Rmq up...');
-
-            await this._scaleDeployment('redis-master', 'redis', 'statefulset', 1);
-            this._logger.trace('redis-master up...');
-
-            await this._scaleDeployment('redis-slave', 'redis', 'deployment', 2);
-            this._logger.trace('redis-slave up...');
-
-            this._logger.trace('DONE');
-
-            return;
+                } else {
+                    this._logger.debug('License validated.');
+                }
+            }
         } catch (err) {
             this._logger.error(`ERROR in DeploymentManager.run(): ${err.message}`);
 
             return;
+        }
+    }
+
+    /**
+     * Halts the execution of the calling async function for a specified period
+     * of time.
+     *
+     * @param {number} period The integer count (in ms) to halt for
+     */
+    private _halt(period: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, period));
+    }
+
+    /**
+     * Changes the given Kubernetes Ingress resource to have a single rule as
+     * defined by the given parameters. Eventually returns a boolean indicating
+     * whether the operation was successful.
+     * NOTE: If your Ingress has multiple rules or multiple paths, these will
+     * be lost. Calling this function updates the ingress to have only one rule
+     *
+     * @param {string} name The name of the Ingress to alter
+     * @param {string} namespace The namespace in which the Ingress resides
+     * @param {string} hostname The hostname to which the new rule will apply
+     * @param {string} servicename The name of the ClusterIP service to point
+     * @param {string} servicePort The port on the ClusterIP service to connect
+     * @returns Promise<boolean> Indicating success of the operation
+     */
+    private async _manipulateIngress(name: string, namespace: string,
+                                     hostname: string, servicename: string,
+                                     serviceport: number): Promise<boolean> {
+        if (Number.parseInt(serviceport.toString(), 10) !== serviceport) {
+            throw Error('serviceport must be an integer.');
+        }
+        namespace = namespace || 'default';
+
+        const payload = {
+            body: {
+                spec: {
+                    rules: [
+                        {host: hostname,
+                        http: { paths: [
+                            {backend: {serviceName: servicename, servicePort: serviceport}}
+                        ]}}
+                    ]
+                }
+            }
+        };
+
+        try {
+            const res = await this._k8s_client.apis.extensions.v1beta1.namespaces(namespace)
+                .ingresses(name).patch(payload);
+
+            this._logger.debug(`Res: ${JSON.stringify(res)}`);
+
+            if (res.statusCode !== 200) {
+                this._logger.error(`ERROR updating Ingress ${name} in namespace ${namespace}: ${JSON.stringify(res)}`);
+
+                return false;
+            }
+
+            return true;
+        } catch (err) {
+            this._logger.error(`ERROR in _manipulateIngress: ${err.message}`);
+
+            return false;
         }
     }
 

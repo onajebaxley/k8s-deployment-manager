@@ -16,12 +16,12 @@ _logger.trace('Detected application configuration', {
     app: _conf.get('app')
 });
 
-async function entrypoint() {
-    const exValidator = () => false;
-    const exManager = new DeploymentManager(exValidator);
+async function entrypoint(): Promise<void> {
+    const exValidator = () => true;
+    const deploymentManager = new DeploymentManager(exValidator);
 
-    await exManager.init();
-    await exManager.run(1000);
+    await deploymentManager.init();
+    await deploymentManager.run(_conf.get('app.validationPeriod'));
 }
 
 entrypoint().then((res) => {
