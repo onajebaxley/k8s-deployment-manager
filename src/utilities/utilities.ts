@@ -1,7 +1,8 @@
 import { argValidator as _argValidator } from '@vamship/arg-utils';
 import * as _config from '@vamship/config';
 import * as _logger from '@vamship/logger';
-import * as request_promise from 'request-promise-native';
+// import * as request_promise from 'request-promise-native';
+const rp = require('request-promise-native');
 
 /**
  * Module to contain utilitity functions, constants, etc.
@@ -34,8 +35,8 @@ namespace Utilities {
      */
     export async function httpRequest(
             hostname: string, port: number,
-            httpMethod: string, httpHeaders: object,
-            queryParams: object, payload: object): Promise<any> {
+            httpMethod: string, httpHeaders?: object,
+            queryParams?: object, payload?: object): Promise<any> {
         if (Object.keys(HTTP_METHOD).map((aKey) => HTTP_METHOD[aKey]).indexOf(httpMethod) < 0) {
             const errMsg = `ERR in Utilities.httpRequest: The specified http method ${httpMethod} is invalid`;
             logger.debug(errMsg);
@@ -50,7 +51,7 @@ namespace Utilities {
         if (!_argValidator.checkNumber(port, 1)) {
             port = 80;
         }
-        options.uri = hostname + port.toString(10);
+        options.uri = 'http://' + hostname + ':' + port.toString(10);
 
         if (httpHeaders) {
             _argValidator.checkObject(httpHeaders, 'The specified httpHeaders (arg #4) must be a valid object');
@@ -67,7 +68,7 @@ namespace Utilities {
         }
 
         logger.trace(`Performing async HTTP request to: ${hostname}:${port}`);
-        return request_promise(options);
+        return rp(options);
     }
 }
 
