@@ -9,13 +9,13 @@ const _k8s_client = require('kubernetes-client').Client;
  * @module root
  * Represents a Kubernetes deployment manager.
  */
-class DeploymentManager {
+class LicenseManager {
     private _validator: PromiseLike<boolean>;
     private _k8s_client: any;
     private _logger: any;
 
     /**
-     * Constructs a DeploymentManager instance based on the given
+     * Constructs a LicenseManager instance based on the given
      * license validation technique.
      *
      * @param {() => boolean} validator The license validation function to use
@@ -24,13 +24,13 @@ class DeploymentManager {
         _argValidator.checkFunction(validator, 'validator must be a boolean-returning function.');
 
         this._validator = _promise.try(validator);
-        this._logger = _logger.getLogger('deploy-manager');
+        this._logger = _logger.getLogger('license-manager');
         this._k8s_client = new _k8s_client({ config: _k8s_config.getInCluster() });
-        this._logger.trace('DeploymentManager constructed.');
+        this._logger.trace('LicenseManager constructed.');
     }
 
     /**
-     * Initializes this DeploymentManager to load accurate K8s client
+     * Initializes this LicenseManager to load accurate K8s client
      * specifications, and verify the given license validator is working.
      *
      * @returns Promise<boolean> Indicating success of the validator
@@ -45,7 +45,7 @@ class DeploymentManager {
 
             return isValid;
         } catch (err) {
-            const msg = `ERROR in DeploymentManager initialization: ${err.message}`;
+            const msg = `ERROR in LicenseManager initialization: ${err.message}`;
             this._logger.error(msg);
 
             throw Error(msg);
@@ -71,7 +71,7 @@ class DeploymentManager {
     }
 
     /**
-     * Kicks off the watchdog abilities of this DeploymentManager. If, during
+     * Kicks off the watchdog abilities of this LicenseManager. If, during
      * monitoring, the specified validation technique fails, this Deployment-
      * Manager will scale all Kubernetes deployments/replicasets/statefulsets
      * under its control to 0 (pods) until validation succeeds.
@@ -88,7 +88,7 @@ class DeploymentManager {
         try {
             while (true) {
                 // this._logger.trace('Waiting...');
-                await this._halt(sampleRate);
+                await this.halt(sampleRate);
 
                 this._logger.trace('Checking license validity...');
                 const isValid = await this.executeValidator();
@@ -102,7 +102,7 @@ class DeploymentManager {
                 }
             }
         } catch (err) {
-            this._logger.error(`ERROR in DeploymentManager.run(): ${err.message}`);
+            this._logger.error(`ERROR in LicenseManager.run(): ${err.message}`);
 
             return;
         }
@@ -114,7 +114,7 @@ class DeploymentManager {
      *
      * @param {number} period The integer count (in ms) to halt for
      */
-    private _halt(period: number): Promise<void> {
+    public halt(period: number): Promise<void> {
         return new Promise((resolve) => setTimeout(resolve, period));
     }
 
@@ -244,4 +244,4 @@ class DeploymentManager {
     }
 }
 
-export { DeploymentManager };
+export { LicenseManager };

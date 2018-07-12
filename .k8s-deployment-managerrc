@@ -2,18 +2,17 @@
     "default": {
         "app": {
             "validationPeriod": 10000,
+            "initialDelayPeriod": 10000,
             "logLevel": "trace"
         }
     },
     "development": {
         "app": {
-            "validationPeriod": 10000,
             "logLevel": "debug"
         }
     },
     "production": {
         "app": {
-            "validationPeriod": 10000,
             "logLevel": "trace"
         }
     }

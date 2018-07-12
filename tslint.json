@@ -7,6 +7,7 @@
     "rules": {
         "quotemark": [true, "single", "avoid-escape"],
         "variable-name": [true, "ban-keywords", "allow-leading-underscore" ],
+        "no-namespace": false,
         "no-unused-variable": true,
         "trailing-comma": false,
         "prefer-conditional-expression": false,

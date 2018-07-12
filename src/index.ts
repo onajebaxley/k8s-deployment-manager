@@ -1,6 +1,6 @@
 import * as config from '@vamship/config';
 import * as logger from '@vamship/logger';
-import { DeploymentManager } from './deployment-manager';
+import { LicenseManager } from './license-manager';
 
 const _conf = config.configure('k8s-deployment-manager')
     .setApplicationScope(process.env.NODE_ENV)
@@ -18,10 +18,11 @@ _logger.trace('Detected application configuration', {
 
 async function entrypoint(): Promise<void> {
     const exValidator = () => true;
-    const deploymentManager = new DeploymentManager(exValidator);
+    const licenseManager = new LicenseManager(exValidator);
 
-    await deploymentManager.init();
-    await deploymentManager.run(_conf.get('app.validationPeriod'));
+    await licenseManager.halt(_conf.get('app.initialDelayPeriod'));
+    await licenseManager.init();
+    await licenseManager.run(_conf.get('app.validationPeriod'));
 }
 
 entrypoint().then((res) => {
@@ -33,4 +34,4 @@ entrypoint().then((res) => {
 /**
  * @module root
  */
-export { default as DeploymentManager } from './deployment-manager';
+export { default as LicenseManager } from './license-manager';
