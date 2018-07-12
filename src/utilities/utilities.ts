@@ -28,13 +28,14 @@ namespace Utilities {
      *
      * @param {string} hostname The string of the DNS hostname to send the request to
      * @param {number} port The integer port to send the request
+     * @param {string} path The string url path to follow the hostname; must begin with a '/'
      * @param {string} httpMethod The HTTP request method type
      * @param {object} httpHeaders An object whose keys are valid HTTP headers with their corresponding values
      * @param {object} queryParams An object whose keys are query-string parameters with their respective values
      * @param {object} payload An object respresenting a JSON payload to send if applicable
      */
     export async function httpRequest(
-            hostname: string, port: number,
+            hostname: string, port: number, path: string,
             httpMethod: string, httpHeaders?: object,
             queryParams?: object, payload?: object): Promise<any> {
         if (Object.keys(HTTP_METHOD).map((aKey) => HTTP_METHOD[aKey]).indexOf(httpMethod) < 0) {
@@ -51,7 +52,14 @@ namespace Utilities {
         if (!_argValidator.checkNumber(port, 1)) {
             port = 80;
         }
-        options.uri = 'http://' + hostname + ':' + port.toString(10);
+
+        if (!_argValidator.checkString(path, 0) || (path.length > 0 && path.indexOf('/') !== 0)) {
+            const errMsg = `ERR in Utilities.httpRequest: The given path ${path} must start with a "/"`;
+            logger.error(errMsg);
+            throw new Error(errMsg);
+        }
+
+        options.uri = 'http://' + hostname + ':' + port.toString(10) + path;
 
         if (httpHeaders) {
             _argValidator.checkObject(httpHeaders, 'The specified httpHeaders (arg #4) must be a valid object');
