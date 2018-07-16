@@ -1,7 +1,12 @@
 {
     "default": {
         "app": {
+            "certificateRequestPeriod": 5000,
+            "isInvalidPeriod": 5000,
             "validationPeriod": 10000,
+            "validationHostname": "pv6k4q4co1.execute-api.us-east-1.amazonaws.com",
+            "validationPort": 443,
+            "validationPath": "/v1beta/license/valid",
             "initialDelayPeriod": 10000,
             "logLevel": "trace"
         }
@@ -13,6 +18,9 @@
     },
     "production": {
         "app": {
+            "certificateRequestPeriod": 30000,
+            "validationPeriod": 43200000,
+            "isInvalidPeriod": 900000,
             "logLevel": "trace"
         }
     }
