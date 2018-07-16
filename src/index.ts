@@ -17,8 +17,11 @@ async function entrypoint(): Promise<void> {
     });
 
     try {
-        const exValidator = () => true;
-        const licenseManager = new LicenseManager(exValidator);
+        const licenseManager = new LicenseManager(
+            _conf.get('app.validationHostname'),
+            _conf.get('app.validationPort'),
+            _conf.get('app.validationPath')
+        );
 
         await licenseManager.halt(_conf.get('app.initialDelayPeriod'));
         await licenseManager.init();

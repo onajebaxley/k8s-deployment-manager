@@ -17,11 +17,10 @@ COPY ./tslint.json k8s-deployment-manager
 ## Install necessary node packages
 WORKDIR /k8s-deployment-manager
 RUN ["npm", "install"]
-WORKDIR /
 
 ## Set the env for apprc
 ENV NODE_ENV production
 
 ## Entrypoint command
-CMD [ "node", "k8s-deployment-manager/src/index.js" ]
+CMD [ "node", "src/index.js", "--start" ]
 

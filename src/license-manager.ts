@@ -2,6 +2,7 @@ import { argValidator as _argValidator } from '@vamship/arg-utils';
 import * as _logger from '@vamship/logger';
 import { Promise as _promise } from 'bluebird';
 import * as kubernetes_client from 'kubernetes-client';
+import { Utilities } from './utilities/utilities';
 const _k8s_config = kubernetes_client.config;
 const _k8s_client = require('kubernetes-client').Client;
 
@@ -10,7 +11,9 @@ const _k8s_client = require('kubernetes-client').Client;
  * Represents a Kubernetes deployment manager.
  */
 class LicenseManager {
-    private _validator: PromiseLike<boolean>;
+    private _validationHostname: string;
+    private _validationPort: number;
+    private _validationPath: string;
     private _k8s_client: any;
     private _logger: any;
 
@@ -18,14 +21,28 @@ class LicenseManager {
      * Constructs a LicenseManager instance based on the given
      * license validation technique.
      *
-     * @param {() => boolean} validator The license validation function to use
+     * @param {string} validationHost The hostname string of the validation server
+     * @param {number} validationPort An integer of the port on the validation server to connect
+     * @param {string} validationPath The string path to request of the hostname (must start with a "/")
      */
-    constructor(validator: () => boolean) {
-        _argValidator.checkFunction(validator, 'validator must be a boolean-returning function.');
+    constructor(validationHost: string, validationPort?: number, validationPath?: string) {
+        _argValidator.checkString(validationHost, 1, 'The given hostname (arg #1) should be at least length 1');
+        if (validationPort) {
+            _argValidator.checkNumber(validationPort, 1, 'The given port (arg #2) must be an integer > 0');
+        } else {
+            validationPort = 80;
+        }
+        if (validationPath && (!_argValidator.checkString(validationPath, 1) || validationPath.indexOf('/') !== 0)) {
+            throw Error('The given path (arg #3) must have nonzero length and start with a "/"');
+        } else {
+            validationPath = validationPath || '';
+        }
 
-        this._validator = _promise.try(validator);
+        this._validationHostname = validationHost;
+        this._validationPort = validationPort;
+        this._validationPath = validationPath;
         this._logger = _logger.getLogger('license-manager');
-        this._k8s_client = new _k8s_client({ config: _k8s_config.getInCluster() });
+        this._k8s_client = null; // to be initialized on init()
         this._logger.trace('LicenseManager constructed.');
     }
 
@@ -37,6 +54,7 @@ class LicenseManager {
      */
     public async init(): Promise<boolean> {
         try {
+            this._k8s_client = new _k8s_client({ config: _k8s_config.getInCluster() });
             await this._k8s_client.loadSpec();
 
             this._logger.trace('Kubernetes client spec loaded.');
@@ -61,8 +79,16 @@ class LicenseManager {
      */
     public async executeValidator(): Promise<boolean> {
         try {
-            const result = await this._validator;
-            return result;
+            const result = await Utilities.httpRequest(
+                this._validationHostname,
+                this._validationPort,
+                this._validationPath,
+                Utilities.HTTP_METHOD.GET,
+                true
+            );
+
+            this._logger.trace(`Validator response: ${JSON.stringify(result)}`);
+            return result.statusCode === 200;
         } catch (err) {
             this._logger.error(`ERROR from provided validator: ${err.message}.`);
 
