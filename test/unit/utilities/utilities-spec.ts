@@ -1,3 +1,4 @@
+import * as _config from '@vamship/config';
 import { Promise as _promise } from 'bluebird';
 import _chai from 'chai';
 import _chaiAsPromised from 'chai-as-promised';
@@ -7,6 +8,9 @@ import _sinonChai from 'sinon-chai';
 _chai.use(_chaiAsPromised);
 _chai.use(_sinonChai);
 const { expect } = _chai;
+const _conf = _config.configure('k8s-deployment-manager')
+    .setApplicationScope(process.env.NODE_ENV)
+    .getConfig();
 
 import { Utilities } from '../../../src/utilities/utilities';
 
@@ -28,16 +32,21 @@ describe('Utilities', () => {
     });
 
     describe('httpRequest()', () => {
+        const VALIDATION_HOST = _conf.get('app.validationHostname');
+        const VALIDATION_PORT = _conf.get('app.validationPort');
+        const VALIDATION_PATH = _conf.get('app.validationPath');
+
         it ('should return a native Promise', () => {
-            const aPromise = Utilities.httpRequest('google.com', 80, '', 'GET');
+            const aPromise = Utilities.httpRequest(VALIDATION_HOST, VALIDATION_PORT, VALIDATION_PATH, 'GET', true);
             expect(aPromise).to.be.a('Promise');
         });
 
         it('should reject Promise given an empty hostname', () => {
             expect(
                 Utilities.httpRequest(
-                    '', 80, '',
-                    Utilities.HTTP_METHOD.GET
+                    '', VALIDATION_PORT, VALIDATION_PATH,
+                    Utilities.HTTP_METHOD.GET,
+                    true
                 )
             ).to.be.rejectedWith('The specified hostname (arg #1) must be a string of at least 1');
         });
@@ -47,7 +56,9 @@ describe('Utilities', () => {
 
             return _promise.map(invalidHttpMethods, (aMethod: any) => {
                 const errMsg = `ERR in Utilities.httpRequest: The specified http method ${aMethod} is invalid`;
-                return expect(Utilities.httpRequest('google.com', 80, '', aMethod))
+                return expect(Utilities.httpRequest(
+                    VALIDATION_HOST, VALIDATION_PORT,
+                    VALIDATION_PATH, aMethod, true))
                 .to.be.rejectedWith(errMsg);
             });
         });
@@ -57,7 +68,9 @@ describe('Utilities', () => {
 
             return _promise.map(invalidPaths, (aPath: any) => {
                 const errMsg = `ERR in Utilities.httpRequest: The given path ${aPath} must start with a "/"`;
-                return expect(Utilities.httpRequest('google.com', 80, aPath, Utilities.HTTP_METHOD.GET))
+                return expect(Utilities.httpRequest(
+                    VALIDATION_HOST, VALIDATION_PORT,
+                    aPath, Utilities.HTTP_METHOD.GET, true))
                 .to.be.rejectedWith(errMsg);
             });
         });
@@ -67,7 +80,7 @@ describe('Utilities', () => {
 
             return _promise.map(invalidObjs, (anObj: any) => {
                 const errMsg = `httpHeaders (arg #4) must be a valid object`;
-                return expect(Utilities.httpRequest('google.com', 80, '', Utilities.HTTP_METHOD.GET, anObj))
+                return expect(Utilities.httpRequest('google.com', 80, '', Utilities.HTTP_METHOD.GET, true, anObj))
                 .to.be.rejectedWith(errMsg);
             });
         });
@@ -77,7 +90,7 @@ describe('Utilities', () => {
 
             return _promise.map(invalidObjs, (anObj: any) => {
                 const errMsg = `query-string parameters (arg #5) must be a valid object`;
-                return expect(Utilities.httpRequest('google.com', 80, '', Utilities.HTTP_METHOD.GET, {}, anObj))
+                return expect(Utilities.httpRequest('google.com', 80, '', Utilities.HTTP_METHOD.GET, true, {}, anObj))
                 .to.be.rejectedWith(errMsg);
             });
         });
@@ -87,7 +100,9 @@ describe('Utilities', () => {
 
             return _promise.map(invalidObjs, (anObj: any) => {
                 const errMsg = `payload (arg #6) must be a standard object`;
-                return expect(Utilities.httpRequest('google.com', 80, '', Utilities.HTTP_METHOD.GET, {}, {}, anObj))
+                return expect(Utilities.httpRequest(
+                    'google.com', 80, '',
+                    Utilities.HTTP_METHOD.GET, true, {}, {}, anObj))
                 .to.be.rejectedWith(errMsg);
             });
         });

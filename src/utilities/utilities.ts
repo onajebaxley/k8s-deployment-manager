@@ -30,13 +30,14 @@ namespace Utilities {
      * @param {number} port The integer port to send the request
      * @param {string} path The string url path to follow the hostname; must begin with a '/'
      * @param {string} httpMethod The HTTP request method type
+     * @param {boolean} isSecure Indicates whether to make the request over "https" instead of "http"
      * @param {object} httpHeaders An object whose keys are valid HTTP headers with their corresponding values
      * @param {object} queryParams An object whose keys are query-string parameters with their respective values
      * @param {object} payload An object respresenting a JSON payload to send if applicable
      */
     export async function httpRequest(
             hostname: string, port: number, path: string,
-            httpMethod: string, httpHeaders?: object,
+            httpMethod: string, isSecure: boolean, httpHeaders?: object,
             queryParams?: object, payload?: object): Promise<any> {
         if (Object.keys(HTTP_METHOD).map((aKey) => HTTP_METHOD[aKey]).indexOf(httpMethod) < 0) {
             const errMsg = `ERR in Utilities.httpRequest: The specified http method ${httpMethod} is invalid`;
@@ -45,7 +46,8 @@ namespace Utilities {
         }
 
         const options: any = {
-            method: httpMethod
+            method: httpMethod,
+            resolveWithFullResponse: true
         };
 
         _argValidator.checkString(hostname, 1, 'The specified hostname (arg #1) must be a string of at least 1');
@@ -59,7 +61,11 @@ namespace Utilities {
             throw new Error(errMsg);
         }
 
-        options.uri = 'http://' + hostname + ':' + port.toString(10) + path;
+        let protocol: string = 'http://';
+        if (isSecure) {
+            protocol = 'https://';
+        }
+        options.uri = protocol + hostname + ':' + port.toString(10) + path;
 
         if (httpHeaders) {
             _argValidator.checkObject(httpHeaders, 'The specified httpHeaders (arg #4) must be a valid object');
