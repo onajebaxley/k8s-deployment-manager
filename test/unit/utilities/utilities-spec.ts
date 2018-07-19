@@ -16,6 +16,7 @@ const _conf = _config.configure('k8s-deployment-manager')
 import { Utilities } from '../../../src/utilities/utilities';
 
 describe('Utilities', () => {
+
     it('should expose the expected modules, functions and properties', () => {
         expect(Utilities).to.be.an('object');
         expect(Utilities.HTTP_METHOD).to.be.an('object');
@@ -23,6 +24,7 @@ describe('Utilities', () => {
     });
 
     describe('HTTP_METHOD', () => {
+
         it('should contain all common HTTP request methods', () => {
             expect(Utilities.HTTP_METHOD.GET).to.exist.and.equal('GET');
             expect(Utilities.HTTP_METHOD.POST).to.exist.and.equal('POST');
@@ -32,37 +34,15 @@ describe('Utilities', () => {
         });
     });
 
-    describe('halt()', () => {
-        it('should return a native Promise when invoked', () => {
-            const shouldBeAPromise = Utilities.halt(100);
-
-            shouldBeAPromise.then(() => ({})).catch(() => ({}));
-            expect(shouldBeAPromise).to.be.a('Promise');
-        });
-
-        it('should require the given time to resolve at minimum', function(this: any, done) {
-            this.timeout(4000);
-            const spy = _sinon.spy();
-            const waitTime = 1000;
-
-            setTimeout(spy, waitTime - 200);
-
-            Utilities.halt(waitTime).then((res) => {
-                expect(spy).to.have.been.called;
-                done();
-            }).catch((err) => {
-                done('ERR: halt() should have been resolved.');
-            });
-        });
-    });
-
     describe('httpRequest()', () => {
         const VALIDATION_HOST = _conf.get('app.validationHostname');
         const VALIDATION_PORT = _conf.get('app.validationPort');
         const VALIDATION_PATH = _conf.get('app.validationPath');
 
-        it ('should return a native Promise', () => {
+        it('should return a native Promise', () => {
             const aPromise = Utilities.httpRequest(VALIDATION_HOST, VALIDATION_PORT, VALIDATION_PATH, 'GET', true);
+
+            aPromise.then().catch((e) => ({}));
             expect(aPromise).to.be.a('Promise');
         });
 
@@ -133,4 +113,72 @@ describe('Utilities', () => {
         });
     });
 
+    describe('halt()', () => {
+
+        it('should return a native Promise when invoked', () => {
+            const shouldBeAPromise = Utilities.halt(100);
+
+            shouldBeAPromise.then(() => ({})).catch(() => ({}));
+            expect(shouldBeAPromise).to.be.a('Promise');
+        });
+
+        it('should require the given time to resolve at minimum', function(this: any, done) {
+            this.timeout(4000);
+            const spy = _sinon.spy();
+            const waitTime = 1000;
+
+            setTimeout(spy, waitTime - 200);
+
+            Utilities.halt(waitTime).then((res) => {
+                expect(spy).to.have.been.called;
+                done();
+            }).catch((err) => {
+                done('ERR: halt() should have been resolved.');
+            });
+        });
+    });
+
+    describe('writeToFile()', () => {
+
+        it('Should error when given an invalid filePath', () => {
+            const dummyData = { };
+            const invalidPaths = [ '', 999, 3.14159, -10, true, false, { a: 'b' }, () => ({}) ];
+
+            invalidPaths.forEach((invalidPath) => {
+                expect(Utilities.writeToFile.bind(undefined, dummyData, invalidPath))
+                .to.throw('Invalid filePath (arg #2) specified; must be an absolute string');
+            });
+        });
+    });
+
+    describe('readFromFile()', () => {
+
+        it('Should error when given an invalid filePath', () => {
+            const invalidPaths = [ '', 999, 3.14159, -10, true, false, { a: 'b' }, () => ({}) ];
+
+            invalidPaths.forEach((invalidPath) => {
+                expect(Utilities.readFromFile.bind(undefined, invalidPath))
+                .to.throw('Invalid filePath (arg #1) given; must be an absolute string');
+            });
+        });
+
+        it('Should error when nothing exists at valid filePath', () => {
+            const validPath = '/this/valid/path/contains/no/data';
+
+            expect(Utilities.readFromFile.bind(undefined, validPath))
+              .to.throw('No file exists at the given file path');
+        });
+    });
+
+    describe('exists()', () => {
+
+        it('Should error when given an invalid filePath', () => {
+            const invalidPaths = [ '', 999, 3.14159, -10, true, false, { a: 'b' }, () => ({}) ];
+
+            invalidPaths.forEach((invalidPath) => {
+                expect(Utilities.exists.bind(undefined, invalidPath))
+                .to.throw('Invalid filePath (arg #1) specified; must be an absolute string');
+            });
+        });
+    });
 });
