@@ -19,7 +19,7 @@ WORKDIR /k8s-deployment-manager
 RUN ["npm", "install"]
 
 ## Set the env for apprc
-ENV NODE_ENV production
+ENV NODE_ENV default
 
 ## Entrypoint command
 CMD [ "node", "src/index.js", "--start" ]
