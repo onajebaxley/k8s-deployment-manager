@@ -114,7 +114,7 @@ class LicenseManager {
         try {
             while (true) {
                 // this._logger.trace('Waiting...');
-                await this.halt(sampleRate);
+                await Utilities.halt(sampleRate);
 
                 this._logger.trace('Checking license validity...');
                 const isValid = await this.executeValidator();
@@ -132,16 +132,6 @@ class LicenseManager {
 
             return;
         }
-    }
-
-    /**
-     * Halts the execution of the calling async function for a specified period
-     * of time.
-     *
-     * @param {number} period The integer count (in ms) to halt for
-     */
-    public halt(period: number): Promise<void> {
-        return new Promise((resolve) => setTimeout(resolve, period));
     }
 
     /**

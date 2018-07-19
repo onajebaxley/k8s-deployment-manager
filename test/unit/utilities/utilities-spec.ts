@@ -3,6 +3,7 @@ import { Promise as _promise } from 'bluebird';
 import _chai from 'chai';
 import _chaiAsPromised from 'chai-as-promised';
 import 'mocha';
+import _sinon from 'sinon';
 import _sinonChai from 'sinon-chai';
 
 _chai.use(_chaiAsPromised);
@@ -28,6 +29,30 @@ describe('Utilities', () => {
             expect(Utilities.HTTP_METHOD.PUT).to.exist.and.equal('PUT');
             expect(Utilities.HTTP_METHOD.DELETE).to.exist.and.equal('DELETE');
             expect(Utilities.HTTP_METHOD.HEAD).to.exist.and.equal('HEAD');
+        });
+    });
+
+    describe('halt()', () => {
+        it('should return a native Promise when invoked', () => {
+            const shouldBeAPromise = Utilities.halt(100);
+
+            shouldBeAPromise.then(() => ({})).catch(() => ({}));
+            expect(shouldBeAPromise).to.be.a('Promise');
+        });
+
+        it('should require the given time to resolve at minimum', function(this: any, done) {
+            this.timeout(4000);
+            const spy = _sinon.spy();
+            const waitTime = 1000;
+
+            setTimeout(spy, waitTime - 200);
+
+            Utilities.halt(waitTime).then((res) => {
+                expect(spy).to.have.been.called;
+                done();
+            }).catch((err) => {
+                done('ERR: halt() should have been resolved.');
+            });
         });
     });
 

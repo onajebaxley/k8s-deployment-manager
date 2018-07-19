@@ -1,6 +1,7 @@
 import { argValidator as _argValidator } from '@vamship/arg-utils';
 import * as _config from '@vamship/config';
 import * as _logger from '@vamship/logger';
+import * as _fs from 'fs';
 // import * as request_promise from 'request-promise-native';
 const rp = require('request-promise-native');
 
@@ -83,6 +84,68 @@ namespace Utilities {
 
         logger.trace(`Performing async HTTP request to: ${hostname}:${port}`);
         return rp(options);
+    }
+
+    /**
+     * Halts the execution of the calling async function for a specified period
+     * of time.
+     *
+     * @param {number} period The integer count (in ms) to halt for
+     */
+    export async function halt(period: number): Promise<{}> {
+        return new Promise((resolve) => setTimeout(resolve, period));
+    }
+
+    /**
+     * Writes the specified content to the given file path, and returns a
+     * boolean indicating the success of the operation.
+     *
+     * @param {string|object} data The string, array, or object of data to be written to file
+     * @param {string} filePath The path (including the filename) indicating the
+     *        location on disk to write to
+     * @returns A boolean indicating a successful write
+     */
+    export function writeToFile(data: string | object | object[], filePath: string): boolean {
+        _argValidator.checkString(filePath, 1, 'Invalid filePath (arg #2) specified; must be an absolute string');
+        if (data && ((data instanceof Array) || typeof data === 'object')) {
+            data = JSON.stringify(data, null, 4);
+        } else if (typeof data !== 'string' || data.length <= 0) {
+            throw new Error('Invalid data (arg #1) specified; must be a string, array, or non-circular object');
+        }
+
+        logger.trace(`Writing to file: ${filePath}`);
+        _fs.writeFileSync(filePath, data, { encoding: 'utf8' });
+
+        return true;
+    }
+
+    /**
+     * Reads file (if it exists) at the specified file path, returning a string
+     * containing the content of the file. Assumes UTF-8 encoding.
+     *
+     * @param filePath The path (including the filename) indicating the
+     *        location on the filesystem to read from.
+     */
+    export function readFromFile(filePath: string): string {
+        _argValidator.checkString(filePath, 1, 'Invalid filePath (arg #1) given; must be an absolute string');
+        if (!_fs.existsSync(filePath)) {
+            throw new Error(`No file exists at the given file path: ${filePath}`);
+        }
+
+        return _fs.readFileSync(filePath, { encoding: 'utf8' });
+    }
+
+    /**
+     * Returns a boolean indicating whether a file exists at the specified
+     * file path.
+     *
+     * @param {string} filePath The path (including the filename) indicating
+     *        the location on disk to check for the file.
+     */
+    export function exists(filePath: string) {
+        _argValidator.checkString(filePath, 1, 'Invalid filePath (arg #1) specified; must be an absolute string');
+
+        return _fs.existsSync(filePath);
     }
 }
 

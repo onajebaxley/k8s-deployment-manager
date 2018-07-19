@@ -1,6 +1,7 @@
 import * as config from '@vamship/config';
 import * as logger from '@vamship/logger';
 import { LicenseManager } from './license-manager';
+import { Utilities } from './utilities/utilities';
 
 async function entrypoint(): Promise<void> {
     const _conf = config.configure('k8s-deployment-manager')
@@ -23,7 +24,7 @@ async function entrypoint(): Promise<void> {
             _conf.get('app.validationPath')
         );
 
-        await licenseManager.halt(_conf.get('app.initialDelayPeriod'));
+        await Utilities.halt(_conf.get('app.initialDelayPeriod'));
         await licenseManager.init();
         await licenseManager.run(_conf.get('app.validationPeriod'));
         _logger.trace('Process complete.');
